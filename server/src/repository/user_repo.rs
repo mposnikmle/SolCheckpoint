@@ -1,6 +1,6 @@
 use std::env;
 extern crate argon2;
-use argon2::Config;
+use argon2::{Config, verify_encoded};
 extern crate dotenv;
 use dotenv::dotenv;
 use mongodb::{
@@ -52,6 +52,25 @@ impl MongoRepo {
         Ok(user)
 
 
+    }
+
+    pub async fn signin(&self, email: &str, password: &str) -> Option<User> {
+        let filter = doc! { "email": email };
+        let user = self.col.find_one(filter, None).await.ok()?;
+
+        if let Some(user) = user {
+            // Verify the provided password against the stored hashed password
+            if verify_encoded(&user.password, password.as_bytes()).unwrap_or(false) {
+                // Password is correct, return the user
+                Some(user)
+            } else {
+                // Incorrect password
+                None
+            }
+        } else {
+            // User not found
+            None
+        }
     }
 
     pub async fn get_user(&self, id: &String) -> Result<User, Error> {

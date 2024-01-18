@@ -3,7 +3,7 @@ mod models;
 mod repository;
 
 use actix_web::{web::Data, App, HttpServer};
-use api::user_api::{create_user, get_user, get_all_users, update_user, delete_user };
+use api::user_api::{create_user, get_user, get_all_users, update_user, delete_user, signin };
 use repository::user_repo::MongoRepo;
 
 #[actix_web::main]
@@ -14,6 +14,7 @@ async fn main() -> std::io::Result<()> {
         App::new()
             .app_data(db_data.clone())
             .service(create_user)
+            .service(signin)
             .service(get_user)
             .service(get_all_users)
             .service(update_user)
