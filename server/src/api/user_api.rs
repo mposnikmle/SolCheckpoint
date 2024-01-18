@@ -1,5 +1,4 @@
 use crate::{models::user_model::User, repository::user_repo::MongoRepo};
-use crate::utils::hash_password;
 use actix_web::{
     post, get, put, delete,
     web::{Data, Json, Path},
@@ -9,17 +8,18 @@ use mongodb::bson::oid::ObjectId;
 
 #[post("/user")]
 pub async fn create_user(db: Data<MongoRepo>, new_user: Json<User>) -> HttpResponse {
-    let hashed_password = hash_password(&new_user.password);
+    let hashed_password = argon2::hash_encoded(new_user.password.as_bytes(), b"randomsalt", &argon2::Config::default());
 
     // Check if hashing was successful
-    if let Err(err) = &hashed_password {
-        return HttpResponse::InternalServerError().body(err.to_string());
-    }
+    let hashed_password = match hashed_password {
+        Ok(hash) => hash,
+        Err(err) => return HttpResponse::InternalServerError().body(err.to_string()),
+    };
 
     let data = User {
         id: None,
         email: new_user.email.to_owned(),
-        password: hashed_password.unwrap().to_owned(),
+        password: hashed_password.to_owned(),
         username: new_user.username.to_owned(),
     };
     let user_detail = db.create_user(data).await;
@@ -42,11 +42,3 @@ pub async fn get_user(db: Data<MongoRepo>, path: Path<String>) -> HttpResponse {
     }
 }
 
-#[get("/users")]
-pub async fn get_all_users(db: Data<MongoRepo>) -> HttpResponse {
-    let users = db.get_all_users().await;
-    match users {
-        Ok(users) => HttpResponse::Ok().json(users),
-        Err(err) => HttpResponse::InternalServerError().body(err.to_string()),
-    }
-}
