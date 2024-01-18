@@ -1,8 +1,8 @@
 use std::env;
+extern crate argon2;
+use argon2::Config;
 extern crate dotenv;
 use dotenv::dotenv;
-use crate::utils::hash_password;
-
 use mongodb::{
     bson::{extjson::de::Error, oid::ObjectId, doc}, 
     results::{ InsertOneResult, UpdateResult, DeleteResult},
@@ -29,12 +29,17 @@ impl MongoRepo {
     }
 
     pub async fn create_user(&self, new_user: User) -> Result<InsertOneResult, Error> {
-        let password_hash = hash_password(&new_user.password)?;
+        
+        // Hash the password using argon2
+        let password = b"password";
+        let salt = b"randomsalt";
+        let config = Config::default();
+        let hashed_password = argon2::hash_encoded(password, salt, &config).unwrap();
 
         let new_doc = User {
             id: None,
             email: new_user.email,
-            password: password_hash,
+            password: hashed_password,
             username: new_user.username,
         };
         let user = self
