@@ -15,6 +15,13 @@ pub struct MongoRepo {
     col: Collection<User>,
 }
 
+fn hash_password(password: &str) -> String {
+    let config = Config::default();
+    let password = b"password";
+    let salt = b"randomsalt";
+    argon2::hash_encoded(password, salt, &config).unwrap()
+}
+
 impl MongoRepo {
     pub async fn init() -> Self {
         dotenv().ok();
@@ -29,17 +36,11 @@ impl MongoRepo {
     }
 
     pub async fn create_user(&self, new_user: User) -> Result<InsertOneResult, Error> {
-        
-        // Hash the password using argon2
-        let password = b"password";
-        let salt = b"randomsalt";
-        let config = Config::default();
-        let hashed_password = argon2::hash_encoded(password, salt, &config).unwrap();
 
         let new_doc = User {
             id: None,
             email: new_user.email,
-            password: hashed_password,
+            password: hash_password(&new_user.password),
             username: new_user.username,
         };
         let user = self
@@ -63,6 +64,59 @@ impl MongoRepo {
             .ok()
             .expect("Error getting user's detail");
         Ok(user_detail.unwrap())
+    }
+
+    pub async fn get_all_users(&self) -> Result<Vec<User>, Error> {
+        let mut cursors = self
+            .col
+            .find(None, None)
+            .await
+            .ok()
+            .expect("Error getting list of users");
+        let mut users: Vec<User> = Vec::new();
+        while let Some(user) = cursors
+            .try_next()
+            .await
+            .ok()
+            .expect("Error mapping through cursor")
+        {
+            users.push(user)
+        }
+        Ok(users)
+    }
+
+    pub async fn update_user(&self, id: &String, new_user: User) -> Result<UpdateResult, Error> {
+        let obj_id = ObjectId::parse_str(id).unwrap();
+        let filter = doc! {"_id": obj_id};
+
+        let new_doc = doc! {
+            "$set":
+                {
+                    "id": new_user.id,
+                    "email": new_user.email,
+                    "password": hash_password(&new_user.password),
+                    "username": new_user.username,
+                },
+        };
+        let updated_doc = self
+            .col
+            .update_one(filter, new_doc, None)
+            .await
+            .ok()
+            .expect("Error updating user");
+        Ok(updated_doc)
+    }
+
+    pub async fn delete_user(&self, id: &String) -> Result<DeleteResult, Error> {
+        let obj_id = ObjectId::parse_str(id).unwrap();
+        let filter = doc! {"_id": obj_id};
+        let user_detail = self
+            .col
+            .delete_one(filter, None)
+            .await
+            .ok()
+            .expect("Error deleting user");
+        Ok(user_detail)
     }
 }
 
