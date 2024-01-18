@@ -30,6 +30,17 @@ pub async fn create_user(db: Data<MongoRepo>, new_user: Json<User>) -> HttpRespo
     }
 }
 
+#[post("/user/signin")]
+pub async fn signin(db: Data<MongoRepo>, credentials: Json<User>) -> HttpResponse {
+    if let Some(user) = db.signin(&credentials.email, &credentials.password).await {
+        // Authentication successful, return user details
+        HttpResponse::Ok().json(user)
+    } else {
+        // Authentication failed
+        HttpResponse::Unauthorized().finish()
+    }
+}
+
 #[get("/user/{id}")]
 pub async fn get_user(db: Data<MongoRepo>, path: Path<String>) -> HttpResponse {
     let id = path.into_inner();
