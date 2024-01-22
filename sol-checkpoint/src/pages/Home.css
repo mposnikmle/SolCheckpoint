@@ -1,0 +1,28 @@
+:root {
+    --magenta: #AF4680;
+    --purple: #94589D;
+    --violet: #6F65A4;
+    --russian: #3B2A51;
+    --raisin: #100B1E;
+}
+
+.App-main-01 {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-evenly;
+    margin-top: 5%;
+}
+
+.App-main-bal, .App-main-col {
+    background-color: var(--russian);
+    padding-top: 12%;
+    padding-left: 15%;
+    padding-right: 15%;
+    padding-bottom: 12%;
+
+    border: 2px solid var(--raisin); /* Corrected border syntax */
+    border-radius: 10px; /* Added border-radius for rounded border */
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+
+
+}

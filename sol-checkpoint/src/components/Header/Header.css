@@ -1,0 +1,22 @@
+:root {
+    --magenta: #AF4680;
+    --purple: #94589D;
+    --violet: #6F65A4;
+    --russian: #3B2A51;
+    --raisin: #100B1E;
+}
+
+.App-header {
+    background-color: var(--russian);
+    margin-top: -21px;
+    padding-bottom: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.App-logo{
+    width: 5%;
+    margin-top: 2%;
+    margin-bottom: 1%;
+}
